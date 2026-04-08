@@ -1,37 +1,48 @@
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 
+-- ลบ UI เก่าป้องกันการรันซ้ำ
+if CoreGui:FindFirstChild("StaminaDolaUI") then CoreGui.StaminaDolaUI:Destroy() end
+
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "StaminaDolaUI"
+
+-- 1. Main UI (ดีไซน์ Stamina ขอบทอง)
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 280, 0, 640)
-Main.Position = UDim2.new(0.5, -140, 0.5, -320)
-Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Main.BorderSizePixel = 3
-Main.BorderColor3 = Color3.fromRGB(255, 0, 0)
+Main.Size = UDim2.new(0, 300, 0, 520)
+Main.Position = UDim2.new(0.5, -150, 0.5, -260)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Main.BorderSizePixel = 2
+Main.BorderColor3 = Color3.fromRGB(255, 200, 50)
 Main.Active = true
 Main.Draggable = true
 
-local Toggle = Instance.new("TextButton", ScreenGui)
-Toggle.Size = UDim2.new(0, 80, 0, 40)
-Toggle.Position = UDim2.new(0, 10, 0, 10)
-Toggle.Text = "เปิด/ปิด"
-Toggle.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-Toggle.TextColor3 = Color3.new(1, 1, 1)
-Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
-
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 45)
-Title.Text = "DOLA: สแกนภารกิจสมบูรณ์"
-Title.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Text = "Stamina x DOLA (V.Final)"
+Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Title.TextColor3 = Color3.fromRGB(180, 100, 255)
+Title.TextSize = 20
+Title.Font = Enum.Font.GothamBold
 
+local Toggle = Instance.new("TextButton", ScreenGui)
+Toggle.Size = UDim2.new(0, 80, 0, 35)
+Toggle.Position = UDim2.new(0, 10, 0, 10)
+Toggle.Text = "Open/Close"
+Toggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Toggle.TextColor3 = Color3.fromRGB(255, 200, 50)
+Toggle.BorderSizePixel = 1
+Toggle.BorderColor3 = Color3.fromRGB(255, 200, 50)
+Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+-- --- ฟังก์ชัน Core (คงเดิม) ---
 local function createNameTag(target, text, color)
     local targetPart = target:IsA("Model") and (target:FindFirstChild("Head") or target:FindFirstChildOfClass("BasePart") or target.PrimaryPart) or target
     if not targetPart then return end
     if targetPart:FindFirstChild("ClassTag") then targetPart.ClassTag:Destroy() end
     local bgui = Instance.new("BillboardGui", targetPart)
     bgui.Name = "ClassTag"
-    bgui.Size = UDim2.new(0, 250, 0, 50)
+    bgui.Size = UDim2.new(0, 200, 0, 50)
     bgui.AlwaysOnTop = true
     bgui.ExtentsOffset = Vector3.new(0, 3, 0)
     local label = Instance.new("TextLabel", bgui)
@@ -40,8 +51,9 @@ local function createNameTag(target, text, color)
     label.Text = text
     label.TextColor3 = color
     label.TextStrokeTransparency = 0
-    label.TextSize = 22
-    label.Font = Enum.Font.SourceSansBold
+    label.TextSize = 18
+    label.Font = Enum.Font.GothamBold
+    label.Parent = bgui
 end
 
 local function applyESP(target, color, tag, className)
@@ -55,95 +67,101 @@ local function applyESP(target, color, tag, className)
     createNameTag(target, className, color)
 end
 
--- --- แก้ไข: ฟังก์ชันสแกนเครื่องปั่นไฟแบบครอบคลุมทุกเงื่อนไข ---
-local function scanGeneratorsUltimate()
-    local foundCount = 0
-    for _, obj in pairs(game.Workspace:GetDescendants()) do
-        local isGen = false
-        local target = nil
-        
-        -- เงื่อนไข 1: เจอชื่อยี่ห้อ EKCM หรือชื่อ Generator
-        if obj.Name:lower():match("ekcm") or obj.Name:lower():match("generator") then
-            isGen = true
-            target = obj
-        -- เงื่อนไข 2: เจอคำสั่ง Repair (ซ่อม)
-        elseif obj:IsA("ProximityPrompt") and (obj.ActionText:lower():match("repair") or obj.ObjectText:lower():match("gen")) then
-            isGen = true
-            target = obj.Parent
-        -- เงื่อนไข 3: เจอแถบพลังงาน (ProgressBar) ที่มักจะอยู่บนเครื่องปั่นไฟ
-        elseif obj:IsA("BillboardGui") and (obj.Name:lower():match("health") or obj.Name:lower():match("progress")) then
-            if obj.Parent and not Players:GetPlayerFromCharacter(obj.Parent) then -- ต้องไม่ใช่บนหัวคน
-                isGen = true
-                target = obj.Parent
-            end
-        end
-
-        if isGen and target then
-            applyESP(target, Color3.fromRGB(255, 200, 0), "JobESP", "⚙️ เครื่องปั่นไฟ")
-            foundCount = foundCount + 1
-        end
-    end
-end
-
-local function createBtn(text, color, pos, callback)
+local function createBtn(text, pos, callback)
     local btn = Instance.new("TextButton", Main)
-    btn.Size = UDim2.new(0.9, 0, 0, 40)
+    btn.Size = UDim2.new(0.9, 0, 0, 38)
     btn.Position = UDim2.new(0.05, 0, 0, pos)
-    btn.Text = text
-    btn.BackgroundColor3 = color
+    btn.Text = " " .. text
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 15
+    btn.Font = Enum.Font.Gotham
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.BorderSizePixel = 0
     btn.MouseButton1Click:Connect(callback)
 end
 
--- --- ปุ่มเมนู ---
-createBtn("⚙️ สแกน: เครื่องปั่นไฟ (FIXED)", Color3.fromRGB(180, 140, 0), 60, scanGeneratorsUltimate)
-createBtn("👹 สแกน: นักฆ่า (ระบุชื่อ)", Color3.fromRGB(150, 0, 0), 110, function()
+-- --- ปุ่มเมนูพร้อมฟังก์ชันที่ต้องการ ---
+
+-- 1. สแกนปั่นไฟ
+createBtn("⚙️ เครื่องปั่นไฟ (EKCM/Repair)", 60, function()
+    for _, obj in pairs(game.Workspace:GetDescendants()) do
+        local isGen = false; local target = nil
+        if obj.Name:lower():match("ekcm") or obj.Name:lower():match("generator") then isGen = true target = obj
+        elseif obj:IsA("ProximityPrompt") and (obj.ActionText:lower():match("repair") or obj.ObjectText:lower():match("gen")) then isGen = true target = obj.Parent
+        end
+        if isGen and target then applyESP(target, Color3.fromRGB(255, 200, 0), "JobESP", "⚙️ Generator") end
+    end
+end)
+
+-- 2. สแกนนักฆ่า (อัปเดต: เพิ่ม Ennard's minions)
+createBtn("👹 นักฆ่า (ผู้เน่า/โปรเจ็ค/Ennard)", 110, function()
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Players.LocalPlayer and p.Character and not p.Character:FindFirstChildOfClass("Shirt") then
-            local kname = "นักฆ่า"
+        if p ~= Players.LocalPlayer and p.Character then
+            local kname = nil
+            -- เช็คจากชื่อหรือไอเทมในตัวละคร
             for _, v in pairs(p.Character:GetDescendants()) do
                 if v.Name:lower():match("spring") or v.Name:lower():match("ตน") then kname = "ผู้เน่า" break
                 elseif v.Name:lower():match("endo") or v.Name:lower():match("project") then kname = "โปรเจ็ค" break
-                elseif v.Name:lower():match("ennard") or v.Name:lower():match("doppel") then kname = "Doppelganger" break
+                elseif v.Name:lower():match("ennard") or v.Name:lower():match("minion") then kname = "Ennard's minions" break
+                elseif v.Name:lower():match("doppel") then kname = "Doppelganger" break
                 end
             end
-            applyESP(p.Character, Color3.fromRGB(255, 0, 0), "JobESP", "⚠️ " .. kname)
+            
+            -- ถ้านักฆ่าไม่มีเสื้อ (ตามเงื่อนไขเดิม) หรือตรวจเจอชื่อข้างต้น
+            if kname or not p.Character:FindFirstChildOfClass("Shirt") then
+                kname = kname or "นักฆ่า"
+                applyESP(p.Character, Color3.fromRGB(255, 0, 0), "JobESP", "⚠️ " .. kname)
+            end
         end
     end
 end)
-createBtn("👥 สแกน: ผู้รอดชีวิต (ระบุคลาส)", Color3.fromRGB(0, 80, 150), 160, function()
+
+-- 3. สแกนผู้รอดชีวิต (หมอแม่นยำ)
+createBtn("👥 ผู้รอดชีวิต (แยกสีตามคลาส)", 160, function()
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Players.LocalPlayer and p.Character and p.Character:FindFirstChildOfClass("Shirt") then
-            local jName = "ผู้รอดชีวิต"
-            local jColor = Color3.fromRGB(0, 150, 255)
+        if p ~= Players.LocalPlayer and p.Character then
+            local jName = "ผู้รอดชีวิต"; local jColor = Color3.fromRGB(0, 150, 255)
+            local isMedic = false
             for _, v in pairs(p.Character:GetDescendants()) do
-                if v.Name:lower():match("med") then jName = "หมอ" jColor = Color3.fromRGB(0, 255, 100) break
-                elseif v.Name:lower():match("stun") or v.Name:lower():match("taser") then jName = "ยาม" jColor = Color3.fromRGB(255, 255, 0) break
-                elseif v.Name:lower():match("axe") or v.Name:lower():match("crowbar") then jName = "นักรบ" jColor = Color3.fromRGB(255, 50, 0) break
-                elseif v.Name:lower():match("pizza") or v.Name:lower():match("soda") then jName = "ลูกค้า" jColor = Color3.fromRGB(255, 255, 255) break
+                if v.Name:lower():match("med") or v.Name:lower():match("heal") or v.Name:lower():match("medical") then
+                    isMedic = true break
+                end
+            end
+            if isMedic then
+                jName = "หมอ"; jColor = Color3.fromRGB(0, 255, 100)
+            else
+                for _, v in pairs(p.Character:GetDescendants()) do
+                    if v.Name:lower():match("stun") or v.Name:lower():match("taser") then jName = "ยาม"; jColor = Color3.fromRGB(255, 255, 0) break
+                    elseif v.Name:lower():match("axe") or v.Name:lower():match("crowbar") then jName = "นักรบ"; jColor = Color3.fromRGB(255, 50, 0) break
+                    end
                 end
             end
             applyESP(p.Character, jColor, "JobESP", jName)
         end
     end
 end)
-createBtn("🔋 สแกน: แบตเตอรี่ (ม่วง)", Color3.fromRGB(130, 0, 130), 220, function()
+
+-- 4. สแกนแบตเตอรี่
+createBtn("🔋 แบตเตอรี่ (Purple)", 210, function()
     for _, obj in pairs(game.Workspace:GetDescendants()) do
         if obj.Name:lower():match("batt") or obj.Name:lower():match("quacell") then
-            applyESP(obj, Color3.fromRGB(255, 0, 255), "JobESP", "แบตเตอรี่")
+            applyESP(obj, Color3.fromRGB(255, 0, 255), "JobESP", "Battery")
         end
     end
 end)
-createBtn("🔌 สแกน: ตู้ใส่แบต (เขียวฟ้า)", Color3.fromRGB(0, 130, 130), 270, function()
+
+-- 5. สแกนตู้ใส่แบต
+createBtn("🔌 ตู้ใส่แบต (Cyan)", 260, function()
     for _, obj in pairs(game.Workspace:GetDescendants()) do
         if obj:IsA("ProximityPrompt") and (obj.ObjectText:lower():match("battery") or obj.ActionText:lower():match("insert")) then
-            applyESP(obj.Parent, Color3.fromRGB(0, 255, 255), "JobESP", "ตู้ใส่แบต")
+            applyESP(obj.Parent, Color3.fromRGB(0, 255, 255), "JobESP", "Cabinet")
         end
     end
 end)
-createBtn("🗑️ ล้างค่าทั้งหมด", Color3.fromRGB(50, 50, 50), 450, function()
+
+-- 6. ล้างค่า และ ปิด
+createBtn("🗑️ ล้างค่าทั้งหมด", 350, function()
     for _, v in pairs(game:GetDescendants()) do if v.Name == "JobESP" or v.Name == "ClassTag" then v:Destroy() end end
 end)
-createBtn("❌ ปิดเมนู", Color3.fromRGB(100, 0, 0), 530, function() ScreenGui:Destroy() end)
-
+createBtn("❌ ปิดสคริปต์", 450, function() ScreenGui:Destroy() end)
