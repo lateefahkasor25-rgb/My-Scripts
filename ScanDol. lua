@@ -1,0 +1,118 @@
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 280, 0, 640)
+Main.Position = UDim2.new(0.5, -140, 0.5, -320)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Main.BorderSizePixel = 3
+Main.BorderColor3 = Color3.fromRGB(255, 0, 0)
+Main.Active = true
+Main.Draggable = true
+
+local Toggle = Instance.new("TextButton", ScreenGui)
+Toggle.Size = UDim2.new(0, 80, 0, 40)
+Toggle.Position = UDim2.new(0, 10, 0, 10)
+Toggle.Text = "เปิด/ปิด"
+Toggle.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+Toggle.TextColor3 = Color3.new(1, 1, 1)
+Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 45)
+Title.Text = "DOLA: สแกนภารกิจ V.2"
+Title.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+Title.TextColor3 = Color3.new(1, 1, 1)
+
+local function applyESP(target, color, tag, className)
+    if not target then return end
+    if target:FindFirstChild(tag) then target[tag]:Destroy() end
+    local h = Instance.new("Highlight", target)
+    h.Name = tag
+    h.FillColor = color
+    h.OutlineColor = Color3.new(1, 1, 1)
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    
+    local head = target:FindFirstChild("Head") or target:FindFirstChildOfClass("BasePart")
+    if head then
+        if head:FindFirstChild("ClassTag") then head.ClassTag:Destroy() end
+        local bgui = Instance.new("BillboardGui", head)
+        bgui.Name = "ClassTag"
+        bgui.Size = UDim2.new(0, 250, 0, 50)
+        bgui.AlwaysOnTop = true
+        bgui.ExtentsOffset = Vector3.new(0, 3, 0)
+        local label = Instance.new("TextLabel", bgui)
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text = className
+        label.TextColor3 = color
+        label.TextSize = 22
+        label.Font = Enum.Font.SourceSansBold
+    end
+end
+
+local function createBtn(text, color, pos, callback)
+    local btn = Instance.new("TextButton", Main)
+    btn.Size = UDim2.new(0.9, 0, 0, 40)
+    btn.Position = UDim2.new(0.05, 0, 0, pos)
+    btn.Text = text
+    btn.BackgroundColor3 = color
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.MouseButton1Click:Connect(callback)
+end
+
+createBtn("⚙️ สแกน: เครื่องปั่นไฟ (EKCM)", Color3.fromRGB(180, 140, 0), 60, function()
+    for _, obj in pairs(game.Workspace:GetDescendants()) do
+        if obj.Name:lower():match("ekcm") or (obj:IsA("ProximityPrompt") and obj.ActionText:lower():match("repair")) then
+            applyESP(obj:IsA("ProximityPrompt") and obj.Parent or obj, Color3.fromRGB(255, 200, 0), "JobESP", "⚙️ เครื่องปั่นไฟ")
+        end
+    end
+end)
+
+createBtn("👹 สแกน: นักฆ่า (ระบุชื่อ)", Color3.fromRGB(150, 0, 0), 110, function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= Players.LocalPlayer and p.Character and not p.Character:FindFirstChildOfClass("Shirt") then
+            local kname = "นักฆ่า"
+            for _, v in pairs(p.Character:GetDescendants()) do
+                if v.Name:lower():match("spring") then kname = "ผู้เน่า" break
+                elseif v.Name:lower():match("endo") then kname = "โปรเจ็ค" break
+                elseif v.Name:lower():match("doppel") then kname = "Doppelganger" break
+                end
+            end
+            applyESP(p.Character, Color3.fromRGB(255, 0, 0), "JobESP", "⚠️ " .. kname)
+        end
+    end
+end)
+
+createBtn("👥 สแกน: ผู้รอดชีวิต (แยกอาชีพ)", Color3.fromRGB(0, 80, 150), 160, function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= Players.LocalPlayer and p.Character and p.Character:FindFirstChildOfClass("Shirt") then
+            local jName = "ผู้รอดชีวิต"
+            local jColor = Color3.fromRGB(0, 150, 255)
+            for _, v in pairs(p.Character:GetDescendants()) do
+                if v.Name:lower():match("med") then jName = "หมอ" jColor = Color3.fromRGB(0, 255, 100) break
+                elseif v.Name:lower():match("stun") then jName = "ยาม" jColor = Color3.fromRGB(255, 255, 0) break
+                elseif v.Name:lower():match("axe") then jName = "นักรบ" jColor = Color3.fromRGB(255, 50, 0) break
+                end
+            end
+            applyESP(p.Character, jColor, "JobESP", jName)
+        end
+    end
+end)
+
+createBtn("🔋 สแกน: แบตเตอรี่ & ตู้ใส่", Color3.fromRGB(130, 0, 130), 220, function()
+    for _, obj in pairs(game.Workspace:GetDescendants()) do
+        if obj.Name:lower():match("batt") or (obj:IsA("ProximityPrompt") and obj.ActionText:lower():match("insert")) then
+            applyESP(obj:IsA("ProximityPrompt") and obj.Parent or obj, Color3.fromRGB(255, 0, 255), "JobESP", "แบตเตอรี่/ตู้")
+        end
+    end
+end)
+
+createBtn("🗑️ ล้างค่าทั้งหมด", Color3.fromRGB(50, 50, 50), 450, function()
+    for _, v in pairs(game:GetDescendants()) do if v.Name == "JobESP" or v.Name == "ClassTag" then v:Destroy() end end
+end)
+
+createBtn("❌ ปิดเมนู", Color3.fromRGB(100, 0, 0), 530, function() ScreenGui:Destroy() end)
+
