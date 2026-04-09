@@ -1,167 +1,155 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
 
--- ลบ UI เก่าป้องกันการรันซ้ำ
-if CoreGui:FindFirstChild("StaminaDolaUI") then CoreGui.StaminaDolaUI:Destroy() end
+local Window = Rayfield:CreateWindow({
+   Name = "VVCX : lateefahkasor25 V2",
+   LoadingTitle = "กำลังเริ่มต้นระบบ VVCX...",
+   LoadingSubtitle = "lateefahkasor25 V2",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
 
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "StaminaDolaUI"
-
--- 1. Main UI (ดีไซน์ Stamina ขอบทอง)
-local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 300, 0, 520)
-Main.Position = UDim2.new(0.5, -150, 0.5, -260)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Main.BorderSizePixel = 2
-Main.BorderColor3 = Color3.fromRGB(255, 200, 50)
-Main.Active = true
-Main.Draggable = true
-
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 45)
-Title.Text = "Stamina x DOLA (V.Final)"
-Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Title.TextColor3 = Color3.fromRGB(180, 100, 255)
-Title.TextSize = 20
-Title.Font = Enum.Font.GothamBold
-
-local Toggle = Instance.new("TextButton", ScreenGui)
-Toggle.Size = UDim2.new(0, 80, 0, 35)
-Toggle.Position = UDim2.new(0, 10, 0, 10)
-Toggle.Text = "Open/Close"
-Toggle.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Toggle.TextColor3 = Color3.fromRGB(255, 200, 50)
-Toggle.BorderSizePixel = 1
-Toggle.BorderColor3 = Color3.fromRGB(255, 200, 50)
-Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
-
--- --- ฟังก์ชัน Core (คงเดิม) ---
+-- --- ฟังก์ชัน Core ของคุณ (คงเดิม 100%) ---
 local function createNameTag(target, text, color)
     local targetPart = target:IsA("Model") and (target:FindFirstChild("Head") or target:FindFirstChildOfClass("BasePart") or target.PrimaryPart) or target
     if not targetPart then return end
     if targetPart:FindFirstChild("ClassTag") then targetPart.ClassTag:Destroy() end
     local bgui = Instance.new("BillboardGui", targetPart)
-    bgui.Name = "ClassTag"
-    bgui.Size = UDim2.new(0, 200, 0, 50)
-    bgui.AlwaysOnTop = true
-    bgui.ExtentsOffset = Vector3.new(0, 3, 0)
+    bgui.Name = "ClassTag"; bgui.Size = UDim2.new(0, 200, 0, 50); bgui.AlwaysOnTop = true; bgui.ExtentsOffset = Vector3.new(0, 3, 0)
     local label = Instance.new("TextLabel", bgui)
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = color
-    label.TextStrokeTransparency = 0
-    label.TextSize = 18
-    label.Font = Enum.Font.GothamBold
-    label.Parent = bgui
+    label.Size = UDim2.new(1, 0, 1, 0); label.BackgroundTransparency = 1; label.Text = text; label.TextColor3 = color; label.TextStrokeTransparency = 0; label.TextSize = 18; label.Font = Enum.Font.GothamBold
 end
 
 local function applyESP(target, color, tag, className)
     if not target then return end
     if target:FindFirstChild(tag) then target[tag]:Destroy() end
     local h = Instance.new("Highlight", target)
-    h.Name = tag
-    h.FillColor = color
-    h.OutlineColor = Color3.new(1, 1, 1)
-    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.Name = tag; h.FillColor = color; h.OutlineColor = Color3.new(1, 1, 1); h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     createNameTag(target, className, color)
 end
 
-local function createBtn(text, pos, callback)
-    local btn = Instance.new("TextButton", Main)
-    btn.Size = UDim2.new(0.9, 0, 0, 38)
-    btn.Position = UDim2.new(0.05, 0, 0, pos)
-    btn.Text = " " .. text
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.TextSize = 15
-    btn.Font = Enum.Font.Gotham
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.BorderSizePixel = 0
-    btn.MouseButton1Click:Connect(callback)
+local function removeESP(tag)
+    for _, v in pairs(game:GetDescendants()) do
+        if v.Name == tag or v.Name == "ClassTag" then v:Destroy() end
+    end
 end
 
--- --- ปุ่มเมนูพร้อมฟังก์ชันที่ต้องการ ---
+-- --- สร้างหน้าเมนู (Tabs) ---
+local TabMain = Window:CreateTab("🏠 Main", 4483362458)
+local TabSpeed = Window:CreateTab("🏃 Speed & Stamina", 4483362458) 
+local TabMisc = Window:CreateTab("⚙️ Misc", 4483345998)
 
--- 1. สแกนปั่นไฟ
-createBtn("⚙️ เครื่องปั่นไฟ (EKCM/Repair)", 60, function()
-    for _, obj in pairs(game.Workspace:GetDescendants()) do
-        local isGen = false; local target = nil
-        if obj.Name:lower():match("ekcm") or obj.Name:lower():match("generator") then isGen = true target = obj
-        elseif obj:IsA("ProximityPrompt") and (obj.ActionText:lower():match("repair") or obj.ObjectText:lower():match("gen")) then isGen = true target = obj.Parent
-        end
-        if isGen and target then applyESP(target, Color3.fromRGB(255, 200, 0), "JobESP", "⚙️ Generator") end
-    end
-end)
+-- --- [Tab: Main] ปุ่มกด ESP ตามภาพที่คุณต้องการ ---
+TabMain:CreateSection("ESP Settings")
 
--- 2. สแกนนักฆ่า (อัปเดต: เพิ่ม Ennard's minions)
-createBtn("👹 นักฆ่า (ผู้เน่า/โปรเจ็ค/Ennard)", 110, function()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Players.LocalPlayer and p.Character then
-            local kname = nil
-            -- เช็คจากชื่อหรือไอเทมในตัวละคร
-            for _, v in pairs(p.Character:GetDescendants()) do
-                if v.Name:lower():match("spring") or v.Name:lower():match("ตน") then kname = "ผู้เน่า" break
-                elseif v.Name:lower():match("endo") or v.Name:lower():match("project") then kname = "โปรเจ็ค" break
-                elseif v.Name:lower():match("ennard") or v.Name:lower():match("minion") then kname = "Ennard's minions" break
-                elseif v.Name:lower():match("doppel") then kname = "Doppelganger" break
-                end
-            end
-            
-            -- ถ้านักฆ่าไม่มีเสื้อ (ตามเงื่อนไขเดิม) หรือตรวจเจอชื่อข้างต้น
-            if kname or not p.Character:FindFirstChildOfClass("Shirt") then
-                kname = kname or "นักฆ่า"
-                applyESP(p.Character, Color3.fromRGB(255, 0, 0), "JobESP", "⚠️ " .. kname)
-            end
-        end
-    end
-end)
+TabMain:CreateButton({
+   Name = "ESP Killer (ผู้เน่า/โปรเจ็ค/Ennard)",
+   Callback = function()
+       for _, p in pairs(Players:GetPlayers()) do
+           if p ~= Players.LocalPlayer and p.Character then
+               local kname = nil
+               for _, v in pairs(p.Character:GetDescendants()) do
+                   if v.Name:lower():match("spring") or v.Name:lower():match("ตน") then kname = "ผู้เน่า" break
+                   elseif v.Name:lower():match("endo") or v.Name:lower():match("project") then kname = "โปรเจ็ค" break
+                   elseif v.Name:lower():match("ennard") or v.Name:lower():match("minion") then kname = "Ennard's minions" break
+                   elseif v.Name:lower():match("doppel") then kname = "Doppelganger" break
+                   end
+               end
+               if kname or not p.Character:FindFirstChildOfClass("Shirt") then
+                   applyESP(p.Character, Color3.fromRGB(255, 0, 0), "JobESP", "⚠️ " .. (kname or "นักฆ่า"))
+               end
+           end
+       end
+   end,
+})
 
--- 3. สแกนผู้รอดชีวิต (หมอแม่นยำ)
-createBtn("👥 ผู้รอดชีวิต (แยกสีตามคลาส)", 160, function()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= Players.LocalPlayer and p.Character then
-            local jName = "ผู้รอดชีวิต"; local jColor = Color3.fromRGB(0, 150, 255)
-            local isMedic = false
-            for _, v in pairs(p.Character:GetDescendants()) do
-                if v.Name:lower():match("med") or v.Name:lower():match("heal") or v.Name:lower():match("medical") then
-                    isMedic = true break
-                end
-            end
-            if isMedic then
-                jName = "หมอ"; jColor = Color3.fromRGB(0, 255, 100)
-            else
-                for _, v in pairs(p.Character:GetDescendants()) do
-                    if v.Name:lower():match("stun") or v.Name:lower():match("taser") then jName = "ยาม"; jColor = Color3.fromRGB(255, 255, 0) break
-                    elseif v.Name:lower():match("axe") or v.Name:lower():match("crowbar") then jName = "นักรบ"; jColor = Color3.fromRGB(255, 50, 0) break
-                    end
-                end
-            end
-            applyESP(p.Character, jColor, "JobESP", jName)
-        end
-    end
-end)
+TabMain:CreateButton({
+   Name = "ESP Generator (เครื่องปั่นไฟ)",
+   Callback = function()
+       for _, obj in pairs(game.Workspace:GetDescendants()) do
+           local isGen = false; local target = nil
+           if obj.Name:lower():match("ekcm") or obj.Name:lower():match("generator") then isGen = true target = obj
+           elseif obj:IsA("ProximityPrompt") and (obj.ActionText:lower():match("repair") or obj.ObjectText:lower():match("gen")) then isGen = true target = obj.Parent
+           end
+           if isGen and target then applyESP(target, Color3.fromRGB(255, 200, 0), "JobESP", "⚙️ Generator") end
+       end
+   end,
+})
 
--- 4. สแกนแบตเตอรี่
-createBtn("🔋 แบตเตอรี่ (Purple)", 210, function()
-    for _, obj in pairs(game.Workspace:GetDescendants()) do
-        if obj.Name:lower():match("batt") or obj.Name:lower():match("quacell") then
-            applyESP(obj, Color3.fromRGB(255, 0, 255), "JobESP", "Battery")
-        end
-    end
-end)
+TabMain:CreateButton({
+   Name = "ESP Survivors (ผู้รอดชีวิต)",
+   Callback = function()
+       for _, p in pairs(Players:GetPlayers()) do
+           if p ~= Players.LocalPlayer and p.Character then
+               local jName = "ผู้รอดชีวิต"; local jColor = Color3.fromRGB(0, 150, 255)
+               local isMedic = false
+               for _, v in pairs(p.Character:GetDescendants()) do
+                   if v.Name:lower():match("med") or v.Name:lower():match("heal") or v.Name:lower():match("medical") then isMedic = true break end
+               end
+               if isMedic then jName = "หมอ"; jColor = Color3.fromRGB(0, 255, 100)
+               else
+                   for _, v in pairs(p.Character:GetDescendants()) do
+                       if v.Name:lower():match("stun") or v.Name:lower():match("taser") then jName = "ยาม"; jColor = Color3.fromRGB(255, 255, 0) break
+                       elseif v.Name:lower():match("axe") or v.Name:lower():match("crowbar") then jName = "นักรบ"; jColor = Color3.fromRGB(255, 50, 0) break
+                       end
+                   end
+               end
+               applyESP(p.Character, jColor, "JobESP", jName)
+           end
+       end
+   end,
+})
 
--- 5. สแกนตู้ใส่แบต
-createBtn("🔌 ตู้ใส่แบต (Cyan)", 260, function()
-    for _, obj in pairs(game.Workspace:GetDescendants()) do
-        if obj:IsA("ProximityPrompt") and (obj.ObjectText:lower():match("battery") or obj.ActionText:lower():match("insert")) then
-            applyESP(obj.Parent, Color3.fromRGB(0, 255, 255), "JobESP", "Cabinet")
-        end
-    end
-end)
+TabMain:CreateButton({
+   Name = "ESP Battery (แบตเตอรี่)",
+   Callback = function()
+       for _, obj in pairs(game.Workspace:GetDescendants()) do
+           if obj.Name:lower():match("batt") or obj.Name:lower():match("quacell") then
+               applyESP(obj, Color3.fromRGB(255, 0, 255), "JobESP", "Battery")
+           end
+       end
+   end,
+})
 
--- 6. ล้างค่า และ ปิด
-createBtn("🗑️ ล้างค่าทั้งหมด", 350, function()
-    for _, v in pairs(game:GetDescendants()) do if v.Name == "JobESP" or v.Name == "ClassTag" then v:Destroy() end end
-end)
-createBtn("❌ ปิดสคริปต์", 450, function() ScreenGui:Destroy() end)
+-- --- [Tab: Speed & Stamina] หน้าวิ่งไวและวิ่งไม่เหนื่อย ---
+TabSpeed:CreateSection("Movement & Energy")
+
+TabSpeed:CreateSlider({
+   Name = "WalkSpeed (ความเร็ว)",
+   Range = {1, 30},
+   Increment = 1,
+   Suffix = " Speed",
+   CurrentValue = 16,
+   Flag = "SpeedSlider", 
+   Callback = function(Value)
+      if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+          Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+      end
+   end,
+})
+
+TabSpeed:CreateToggle({
+   Name = "🏃 Infinite Stamina (วิ่งไม่เหนื่อย)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.InfStamina = Value
+      task.spawn(function()
+          while _G.InfStamina do
+              task.wait()
+              local char = Players.LocalPlayer.Character
+              if char then
+                  local stamina = char:FindFirstChild("Stamina") or Players.LocalPlayer:FindFirstChild("Stamina")
+                  if stamina and (stamina:IsA("NumberValue") or stamina:IsA("IntValue")) then
+                      stamina.Value = 100
+                  end
+              end
+          end
+      end)
+   end,
+})
+
+-- --- [Tab: Misc] ---
+TabMisc:CreateSection("Controls")
+TabMisc:CreateButton({ Name = "🗑️ Clear All ESP", Callback = function() removeESP("JobESP") end })
+TabMisc:CreateButton({ Name = "❌ Close Script", Callback = function() Rayfield:Destroy() end })
+
